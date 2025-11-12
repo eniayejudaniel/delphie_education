@@ -1,7 +1,7 @@
 import os, traceback, json
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 
@@ -30,7 +30,7 @@ def send_whatsapp_message(first_name, phone_number):
 
 
 @app.post("/send_whatsapp")
-async def send_whatsapp(request: Request):
+async def send_whatsapp(request: Request, background_tasks: BackgroundTasks):
     try:
         data = await request.json()
         print(data)
@@ -40,8 +40,8 @@ async def send_whatsapp(request: Request):
         if not phone_number:
             return JSONResponse({"error": "Phone number is required"}, status_code=400)
 
-        result = send_whatsapp_message(first_name, phone_number)
-        return JSONResponse(result, status_code=200)
+        background_tasks.add_task(send_whatsapp_message, first_name, phone_number)
+        return JSONResponse({"status": "processing"}, status_code=200)
 
     except Exception:
         print(traceback.format_exc())
